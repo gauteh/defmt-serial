@@ -8,4 +8,5 @@ authors = [ "Gaute Hope <eg@gaute.vetsj.com>" ]
 
 [dependencies]
 defmt = "0.3.2"
-embedded-hal = "0.2.7"
+embedded-hal = "1.0.0-alpha.8"
+nb = "1.0.0"
