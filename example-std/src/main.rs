@@ -1,47 +1,37 @@
 #![feature(never_type)]
-use std::fs;
-use core::sync::atomic::{AtomicU32, Ordering};
 use embedded_hal::serial::Write;
-use defmt_serial as _;
+use std::io::{self, Write as _};
 
-static COUNT: AtomicU32 = AtomicU32::new(0);
-defmt::timestamp!("{}", COUNT.fetch_add(1, Ordering::Relaxed));
+struct StdoutSerial;
 
-struct VecSerial {
-    pub buf: Vec<u8>,
-}
-
-impl VecSerial {
-    pub fn new() -> VecSerial {
-        VecSerial { buf: Vec::new() }
-    }
-}
-
-impl Write<u8> for VecSerial {
+impl Write<u8> for StdoutSerial {
     type Error = !;
 
     fn write(&mut self, word: u8) -> nb::Result<(), !> {
-        self.buf.push(word);
+        io::stdout().write(&[word]).unwrap();
         Ok(())
     }
 
     fn flush(&mut self) -> nb::Result<(), !> {
-        // nop
+        io::stdout().flush().unwrap();
         Ok(())
     }
 }
 
 fn main() {
-    // TODO: flag for writing to file or to stdout
-    // stdout can be used as runner through defmt-print
-    println!("Hello, world!");
+    eprintln!("Hello, world!");
 
-    let mut serial = VecSerial::new();
-    defmt_serial::defmt_serial!(serial, VecSerial);
+    let mut serial = StdoutSerial;
+    defmt_serial::defmt_serial!(serial, StdoutSerial);
 
-    println!("Logging to info with defmt..");
+    eprintln!("Logging to info with defmt..");
     defmt::info!("Hello defmt-world!");
 
-    println!("Writing to defmt.out");
-    fs::write("defmt.out", serial.buf).unwrap();
+    for i in 0..50 {
+        defmt::debug!("Now at: {}", i);
+    }
+
+    defmt::warn!("Done!");
+
+    eprintln!("Good bye.");
 }

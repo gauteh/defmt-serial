@@ -11,8 +11,7 @@ static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
 static TAKEN: AtomicBool = AtomicBool::new(false);
 static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
 
-/// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write`
-/// trait.
+/// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
 pub type WriteCB = unsafe fn(&[u8]);
 pub static mut WRITEFN: Option<WriteCB> = None;
 pub static mut WRITECB: Option<*const c_void> = None;

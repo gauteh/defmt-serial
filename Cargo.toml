@@ -3,8 +3,8 @@ name = "defmt-serial"
 version = "0.1.0"
 edition = "2021"
 authors = [ "Gaute Hope <eg@gaute.vetsj.com>" ]
+description = "Log defmt-messages over serial"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 critical-section = "0.2.7"
