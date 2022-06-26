@@ -1,4 +1,6 @@
-#![no_std]
+// #![no_std]
+#![feature(unboxed_closures)]
+#![feature(fn_traits)]
 
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -13,26 +15,56 @@ static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write`
 /// trait.
-pub static mut WRITEFN: Option<*const c_void> = None;
+pub type WriteCB = unsafe fn(&[u8]);
+pub static mut WRITEFN: Option<WriteCB> = None;
+pub static mut WRITECB: Option<*const c_void> = None;
+
+unsafe fn trampoline<F>(buf: &[u8])
+where
+    F: FnMut(&[u8]),
+{
+    println!("trampoline");
+    if let Some(wfn) = WRITEFN {
+        let wfn = &mut *(wfn as *mut F);
+        wfn(buf);
+    }
+}
+
+pub fn get_trampoline<F>(_closure: &F) -> WriteCB
+where
+    F: FnMut(&[u8]),
+{
+    trampoline::<F>
+}
 
 #[macro_export]
 macro_rules! defmt_serial {
     ($serial:ident, $stype:ty) => {{
-        use core::ptr;
+        use core::{ptr, ffi::c_void};
 
         static mut LOGGER: *mut $stype = ptr::null_mut();
 
-        let wfn = |bytes: &[u8]| unsafe {
-            for b in bytes {
+        let mut wfn = |buf: &[u8]| unsafe {
+            println!("wfn closure: {:?}", buf);
+            for b in buf {
                 defmt_serial::block!((*LOGGER).write(*b)).ok();
             }
         };
+        let mut trampoline = defmt_serial::get_trampoline(&wfn);
+
+        // static wfn = |bytes: &[u8]| unsafe {
+        //     println!("wfn closure: {:?}", bytes);
+        //     for b in bytes {
+        //         defmt_serial::block!((*LOGGER).write(*b)).ok();
+        //     }
+        // };
 
         unsafe {
             let token = defmt_serial::critical_section::acquire();
 
             LOGGER = &mut ($serial) as *mut _;
-            defmt_serial::WRITEFN = Some(&wfn as *const _ as *const c_void);
+            defmt_serial::WRITECB = Some(&mut wfn as *mut _ as *mut c_void);
+            defmt_serial::WRITEFN = Some(trampoline);
 
             defmt_serial::critical_section::release(token);
         }
@@ -44,6 +76,7 @@ pub struct GlobalSerialLogger;
 
 unsafe impl defmt::Logger for GlobalSerialLogger {
     fn acquire() {
+        println!("acquire");
         let token = unsafe { critical_section::acquire() };
 
         if TAKEN.load(Ordering::Relaxed) {
@@ -54,6 +87,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 
         INTERRUPTS.store(token, Ordering::Relaxed);
 
+        println!("start frame");
         unsafe { ENCODER.start_frame(write_serial) }
     }
 
@@ -64,6 +98,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     }
 
     unsafe fn write(bytes: &[u8]) {
+        println!("write");
         ENCODER.write(bytes, write_serial);
     }
 
@@ -74,9 +109,9 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {
+        println!("writing: {:?}", remaining);
         if let Some(wfn) = WRITEFN {
-            let wfn: *const fn(&[u8]) = wfn as *const _;
-            (*wfn)(remaining);
+            wfn(remaining);
         }
     }
 }

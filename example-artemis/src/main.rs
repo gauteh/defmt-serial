@@ -6,7 +6,7 @@ use cortex_m::asm;
 use cortex_m_rt::entry;
 use ambiq_hal::{self as hal, prelude::*};
 use defmt;
-use defmt_rtt as _;
+use defmt_serial as _;
 
 #[entry]
 fn main() -> ! {
