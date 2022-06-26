@@ -1,6 +1,4 @@
-// #![no_std]
-#![feature(unboxed_closures)]
-#![feature(fn_traits)]
+#![no_std]
 
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -23,7 +21,6 @@ unsafe fn trampoline<F>(buf: &[u8])
 where
     F: FnMut(&[u8]),
 {
-    println!("trampoline");
     if let Some(wfn) = WRITEFN {
         let wfn = &mut *(wfn as *mut F);
         wfn(buf);
@@ -45,7 +42,6 @@ macro_rules! defmt_serial {
         static mut LOGGER: *mut $stype = ptr::null_mut();
 
         let mut wfn = |buf: &[u8]| unsafe {
-            println!("wfn closure: {:?}", buf);
             for b in buf {
                 defmt_serial::block!((*LOGGER).write(*b)).ok();
             }
@@ -76,7 +72,6 @@ pub struct GlobalSerialLogger;
 
 unsafe impl defmt::Logger for GlobalSerialLogger {
     fn acquire() {
-        println!("acquire");
         let token = unsafe { critical_section::acquire() };
 
         if TAKEN.load(Ordering::Relaxed) {
@@ -87,7 +82,6 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 
         INTERRUPTS.store(token, Ordering::Relaxed);
 
-        println!("start frame");
         unsafe { ENCODER.start_frame(write_serial) }
     }
 
@@ -98,7 +92,6 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     }
 
     unsafe fn write(bytes: &[u8]) {
-        println!("write");
         ENCODER.write(bytes, write_serial);
     }
 
@@ -109,7 +102,6 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {
-        println!("writing: {:?}", remaining);
         if let Some(wfn) = WRITEFN {
             wfn(remaining);
         }

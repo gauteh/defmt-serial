@@ -1,6 +1,4 @@
 #![feature(never_type)]
-#![feature(unboxed_closures)]
-#![feature(fn_traits)]
 use std::fs;
 use core::sync::atomic::{AtomicU32, Ordering};
 use embedded_hal::serial::Write;
@@ -34,6 +32,8 @@ impl Write<u8> for VecSerial {
 }
 
 fn main() {
+    // TODO: flag for writing to file or to stdout
+    // stdout can be used as runner through defmt-print
     println!("Hello, world!");
 
     let mut serial = VecSerial::new();
