@@ -47,13 +47,6 @@ macro_rules! defmt_serial {
         };
         let mut trampoline = defmt_serial::get_trampoline(&wfn);
 
-        // static wfn = |bytes: &[u8]| unsafe {
-        //     println!("wfn closure: {:?}", bytes);
-        //     for b in bytes {
-        //         defmt_serial::block!((*LOGGER).write(*b)).ok();
-        //     }
-        // };
-
         unsafe {
             let token = defmt_serial::critical_section::acquire();
 
