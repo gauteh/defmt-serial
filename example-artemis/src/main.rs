@@ -20,7 +20,6 @@ fn main() -> ! {
 
     // set up serial
     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-    // type Uart = hal::uart::Uart0;
     defmt_serial::defmt_serial!(serial, hal::uart::Uart0);
 
     defmt::info!("Hello!");

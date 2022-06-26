@@ -1,93 +1,82 @@
 #![no_std]
 
 use core::ffi::c_void;
-use core::ptr;
-use core::{any::Any, marker::PhantomData};
-use defmt::{global_logger, Logger};
-use embedded_hal::serial::{nb::Write, Error, ErrorKind, ErrorType};
+use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use defmt::global_logger;
+
+pub use critical_section;
+pub use nb::block;
 
 static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
-pub static mut WRITEFN: *const c_void = ptr::null_mut();
+static TAKEN: AtomicBool = AtomicBool::new(false);
+static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
+
+/// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write`
+/// trait.
+pub static mut WRITEFN: Option<*const c_void> = None;
 
 #[macro_export]
 macro_rules! defmt_serial {
-    ($serial:ident, $stype:ty) => {
+    ($serial:ident, $stype:ty) => {{
         use core::ptr;
+
         static mut LOGGER: *mut $stype = ptr::null_mut();
 
-        let wfn = |bytes: &[u8]| {
-            unsafe {
-                for b in bytes {
-                    (*LOGGER).write(*b);
-                }
+        let wfn = |bytes: &[u8]| unsafe {
+            for b in bytes {
+                defmt_serial::block!((*LOGGER).write(*b)).ok();
             }
         };
 
         unsafe {
+            let token = defmt_serial::critical_section::acquire();
+
             LOGGER = &mut ($serial) as *mut _;
+            defmt_serial::WRITEFN = Some(&wfn as *const _ as *const c_void);
 
-            defmt_serial::WRITEFN = &wfn as *const _ as *const c_void;
+            defmt_serial::critical_section::release(token);
         }
-    };
+    }};
 }
 
-static mut LOGGER: Option<*mut WriteWrapper> = None;
+#[global_logger]
+pub struct GlobalSerialLogger;
 
-struct WriteWrapper(&'static dyn Write<u8, Error = dyn Error>);
-
-#[derive(Debug)]
-struct WWErr;
-
-impl ErrorType for WriteWrapper {
-    type Error = WWErr;
-}
-
-impl Error for WWErr {
-    fn kind(&self) -> ErrorKind {
-        ErrorKind::Other
-    }
-}
-
-static mut ERR_ARR: [u8; 124] = [0u8; 124];
-
-impl Write<u8> for WriteWrapper {
-    fn write(&mut self, b: u8) -> nb::Result<(), Self::Error> {
-        unsafe {
-            // ERR_ARR = core::mem::transmute_copy(&self.0.write(b));
-            // ERR_ARR = self.0.write(b) as *const _;
-        }
-        Ok(())
-    }
-
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
-        Ok(())
-    }
-}
-
-pub struct GlobalSerialLogger<W: Write<u8>>(PhantomData<W>);
-
-// #[global_logger]
-// pub struct UartGlobalLogger;
-
-unsafe impl<W: Write<u8>> defmt::Logger for GlobalSerialLogger<W> {
+unsafe impl defmt::Logger for GlobalSerialLogger {
     fn acquire() {
-        // check atomic bool if taken
+        let token = unsafe { critical_section::acquire() };
+
+        if TAKEN.load(Ordering::Relaxed) {
+            panic!("defmt logger taken reentrantly");
+        }
+
+        TAKEN.store(true, Ordering::Relaxed);
+
+        INTERRUPTS.store(token, Ordering::Relaxed);
+
+        unsafe { ENCODER.start_frame(write_serial) }
     }
 
-    unsafe fn release() {}
+    unsafe fn release() {
+        ENCODER.end_frame(write_serial);
+        TAKEN.store(false, Ordering::Relaxed);
+        critical_section::release(INTERRUPTS.load(Ordering::Relaxed));
+    }
 
-    unsafe fn write(bytes: &[u8]) {}
+    unsafe fn write(bytes: &[u8]) {
+        ENCODER.write(bytes, write_serial);
+    }
 
     unsafe fn flush() {}
 }
 
-fn write_serial(mut remaining: &[u8]) {
+/// Write to serial using proxy function. Caller must ensure this function is not called
+/// several times in parallel.
+fn write_serial(remaining: &[u8]) {
     unsafe {
-        // if let Some(writer) = LOGGER {
-        //     for b in remaining {
-        // Write::<u8>::write(&mut *writer, *b);
-        // (*writer).write(*b);
-        // }
-        // }
+        if let Some(wfn) = WRITEFN {
+            let wfn: *const fn(&[u8]) = wfn as *const _;
+            (*wfn)(remaining);
+        }
     }
 }
