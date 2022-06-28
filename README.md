@@ -1,6 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/defmt-serial.svg)](https://crates.io/crates/defmt-serial)
 [![Documentation](https://docs.rs/defmt-serial/badge.svg)](https://docs.rs/defmt-serial/)
-[![Rust nightly](https://img.shields.io/badge/rustc-nightly-orange)](https://rust-lang.github.io/rustup/installation/other.html)
 
 # defmt-serial
 
