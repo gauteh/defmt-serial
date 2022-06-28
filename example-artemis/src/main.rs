@@ -2,7 +2,6 @@
 #![no_main]
 
 use panic_probe as _;
-use cortex_m::asm;
 use cortex_m_rt::entry;
 use ambiq_hal::{self as hal, prelude::*};
 use defmt;
@@ -22,11 +21,15 @@ fn main() -> ! {
     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
     defmt_serial::defmt_serial!(serial, hal::uart::Uart0);
 
-    defmt::info!("Hello!");
+    defmt::warn!("Hello!");
 
     loop {
-        led.toggle().unwrap();
         delay.delay_ms(2000u32);
-        asm::nop();
+        defmt::info!("Loop!");
+        for i in 0..10 {
+            led.toggle().unwrap();
+            delay.delay_ms(100u32);
+            defmt::debug!("Inner loop: {}", i);
+        }
     }
 }

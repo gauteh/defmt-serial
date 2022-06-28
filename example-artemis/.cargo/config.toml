@@ -1,5 +1,5 @@
 [target.thumbv7em-none-eabihf]
-runner = "../tools/svl-wrapper.sh"
+runner = "bash svl-defmt-wrapper.sh"
 # runner = "probe-run --chip AMA3B1KK-KBR"
 
 [target.'cfg(all(target_arch = "arm", target_os = "none"))']
