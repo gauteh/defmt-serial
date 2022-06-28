@@ -15,3 +15,6 @@ Remember to set the `DEFMT_LOG` variable when testing, e.g.:
 $ cd example-std/
 $ DEFMT_LOG=debug cargo run
 ```
+
+<img src="example-defmt-serial.png" width="80%"></img>
+
