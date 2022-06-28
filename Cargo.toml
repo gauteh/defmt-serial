@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 authors = [ "Gaute Hope <eg@gaute.vetsj.com>" ]
 description = "Log defmt-messages over serial"
+license = "MIT"
+repository = "https://github.com/gauteh/defmt-serial"
 
 
 [dependencies]
