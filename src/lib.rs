@@ -1,4 +1,40 @@
 #![no_std]
+//! A defmt target for logging messages over a serial interface. The serial interface must
+//! implement e.g. [`embedded_hal::serial::nb::Write`].
+//!
+//! The received defmt-frames can be read using e.g. `socat` and `defmt-print`, so that you can set
+//! it up as `cargo run`ner. See the [example-artemis](https://github.com/gauteh/defmt-serial/tree/main/example-artemis) for how to do that.
+//!
+//! You can also use it to have defmt work on std/hosted OSes, see [example-std](https://github.com/gauteh/defmt-serial/tree/main/example-std).
+//!
+//! ```no_run
+//! #![no_std]
+//! #![no_main]
+//!
+//!
+//! use panic_probe as _;
+//! use cortex_m::asm;
+//! use cortex_m_rt::entry;
+//! use ambiq_hal::{self as hal, prelude::*};
+//! use defmt;
+//! use defmt_serial as _;
+//!
+//! #[entry]
+//! fn main() -> ! {
+//!     let mut dp = hal::pac::Peripherals::take().unwrap();
+//!     let pins = hal::gpio::Pins::new(dp.GPIO);
+//!
+//!     // set up serial
+//!     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+//!     defmt_serial::defmt_serial!(serial, hal::uart::Uart0);
+//!
+//!     defmt::info!("Hello from defmt!");
+//!
+//!     loop {
+//!         asm::wfi();
+//!     }
+//! }
+//! ```
 
 use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
@@ -33,6 +69,8 @@ where
     trampoline::<F>
 }
 
+/// Assign a serial interface to received defmt-messages. Pass the serial interface and the type of
+/// the interface.
 #[macro_export]
 macro_rules! defmt_serial {
     ($serial:ident, $stype:ty) => {{
