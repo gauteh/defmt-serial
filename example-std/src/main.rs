@@ -21,8 +21,10 @@ impl Write<u8> for StdoutSerial {
 fn main() {
     eprintln!("Hello, world!");
 
-    let mut serial = StdoutSerial;
-    defmt_serial::defmt_serial!(serial, StdoutSerial);
+    {
+        let serial = StdoutSerial;
+        defmt_serial::defmt_serial!(serial, StdoutSerial);
+    }
 
     eprintln!("Logging to info with defmt..");
     defmt::info!("Hello defmt-world!");
