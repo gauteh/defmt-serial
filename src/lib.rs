@@ -36,7 +36,6 @@
 //! }
 //! ```
 
-use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use defmt::global_logger;
 
@@ -50,7 +49,6 @@ static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
 pub type WriteCB = unsafe fn(&[u8]);
 pub static mut WRITEFN: Option<WriteCB> = None;
-pub static mut WRITECB: Option<*const c_void> = None;
 
 unsafe fn trampoline<F>(buf: &[u8])
 where
@@ -74,8 +72,6 @@ where
 #[macro_export]
 macro_rules! defmt_serial {
     ($serial:ident, $stype:ty) => {{
-        use core::{ffi::c_void, ptr};
-
         // Move target into local static to prevent it from being freed
         // in case it goes out of scope.
         static mut LOGGER: Option<$stype> = None;
@@ -94,7 +90,6 @@ macro_rules! defmt_serial {
             let token = defmt_serial::critical_section::acquire();
 
             LOGGER = Some($serial);
-            defmt_serial::WRITECB = Some(&mut wfn as *mut _ as *mut c_void);
             defmt_serial::WRITEFN = Some(trampoline);
 
             defmt_serial::critical_section::release(token);

@@ -18,7 +18,7 @@ fn main() -> ! {
     let mut led = pins.d19.into_push_pull_output();
 
     // set up serial
-    let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+    let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
     defmt_serial::defmt_serial!(serial, hal::uart::Uart0);
 
     defmt::warn!("Hello!");
