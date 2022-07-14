@@ -72,24 +72,19 @@ where
 #[macro_export]
 macro_rules! defmt_serial {
     ($serial:ident, $stype:ty) => {{
-        // Move target into local static to prevent it from being freed
-        // in case it goes out of scope.
-        static mut LOGGER: Option<$stype> = None;
+        let mut LOGGER = core::mem::ManuallyDrop::new($serial);
 
-        let mut wfn = |buf: &[u8]| unsafe {
-            let w = LOGGER.as_mut().unwrap();
-
+        let mut wfn = move |buf: &[u8]| {
             for b in buf {
-                defmt_serial::block!(w.write(*b)).ok();
+                defmt_serial::block!(LOGGER.write(*b)).ok();
             }
         };
 
-        let mut trampoline = defmt_serial::get_trampoline(&wfn);
+        let trampoline = defmt_serial::get_trampoline(&wfn);
 
         unsafe {
             let token = defmt_serial::critical_section::acquire();
 
-            LOGGER = Some($serial);
             defmt_serial::WRITEFN = Some(trampoline);
 
             defmt_serial::critical_section::release(token);
