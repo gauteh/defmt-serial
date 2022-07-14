@@ -74,7 +74,7 @@ macro_rules! defmt_serial {
     ($serial:ident, $stype:ty) => {{
         let mut LOGGER = core::mem::ManuallyDrop::new($serial);
 
-        let mut wfn = move |buf: &[u8]| {
+        let wfn = move |buf: &[u8]| {
             for b in buf {
                 defmt_serial::block!(LOGGER.write(*b)).ok();
             }
