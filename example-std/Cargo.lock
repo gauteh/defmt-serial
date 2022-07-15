@@ -58,7 +58,7 @@ checksum = "cd20d4ac4aa86f4f75f239d59e542ef67de87cce2c282818dc6e84155d3ea126"
 dependencies = [
  "bare-metal 0.2.5",
  "bitfield",
- "embedded-hal 0.2.7",
+ "embedded-hal",
  "volatile-register",
 ]
 
@@ -109,7 +109,7 @@ version = "0.3.0"
 dependencies = [
  "critical-section",
  "defmt",
- "embedded-hal 1.0.0-alpha.8",
+ "embedded-hal",
  "nb 1.0.0",
 ]
 
@@ -124,21 +124,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "embedded-hal"
-version = "1.0.0-alpha.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3babfc7fd332142a0b11aebf592992f211f4e01b6222fb04b03aba1bd80018d"
-dependencies = [
- "nb 1.0.0",
-]
-
-[[package]]
 name = "example-std"
 version = "0.1.0"
 dependencies = [
  "defmt",
  "defmt-serial",
- "embedded-hal 0.2.7",
+ "embedded-hal",
  "nb 1.0.0",
 ]
 

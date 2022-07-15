@@ -1,6 +1,6 @@
 #![no_std]
 //! A defmt target for logging messages over a serial interface. The serial interface must
-//! implement e.g. [`embedded_hal::serial::nb::Write`].
+//! implement e.g. [`embedded_hal::serial::Write`].
 //!
 //! The received defmt-frames can be read using e.g. `socat` and `defmt-print`, so that you can set
 //! it up as `cargo run`ner. See the [example-artemis](https://github.com/gauteh/defmt-serial/tree/main/example-artemis) for how to do that.
@@ -26,7 +26,7 @@
 //!
 //!     // set up serial
 //!     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-//!     defmt_serial::defmt_serial!(serial);
+//!     defmt_serial::defmt_serial(serial);
 //!
 //!     defmt::info!("Hello from defmt!");
 //!
@@ -39,16 +39,13 @@
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use defmt::global_logger;
 
-pub use critical_section;
-pub use nb::block;
-
 static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
 static TAKEN: AtomicBool = AtomicBool::new(false);
 static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
-pub type WriteCB = unsafe fn(&[u8]);
-pub static mut WRITEFN: Option<WriteCB> = None;
+type WriteCB = unsafe fn(&[u8]);
+static mut WRITEFN: Option<WriteCB> = None;
 
 unsafe fn trampoline<F>(buf: &[u8])
 where
@@ -60,41 +57,32 @@ where
     }
 }
 
-pub fn get_trampoline<F>(_closure: &F) -> WriteCB
+fn get_trampoline<F>(_closure: &F) -> WriteCB
 where
     F: FnMut(&[u8]),
 {
     trampoline::<F>
 }
 
-/// Assign a serial interface to received defmt-messages. Pass the serial interface and the type of
-/// the interface.
-#[macro_export]
-macro_rules! defmt_serial {
-    ($serial:ident) => {{
-        // Maybe this can now be done with a generic function?
-        let mut LOGGER = core::mem::ManuallyDrop::new($serial);
-
-        let wfn = move |buf: &[u8]| {
-            for b in buf {
-                defmt_serial::block!(LOGGER.write(*b)).ok();
-            }
-        };
-
-        let trampoline = defmt_serial::get_trampoline(&wfn);
-
-        unsafe {
-            let token = defmt_serial::critical_section::acquire();
-
-            defmt_serial::WRITEFN = Some(trampoline);
-
-            defmt_serial::critical_section::release(token);
+/// Assign a serial peripheral to received defmt-messages.
+pub fn defmt_serial(mut serial: impl embedded_hal::serial::Write<u8> + 'static) {
+    let wfn = move |buf: &[u8]| {
+        for b in buf {
+            nb::block!(serial.write(*b)).ok();
         }
-    }};
+    };
+
+    let trampoline = get_trampoline(&wfn);
+
+    unsafe {
+        let token = critical_section::acquire();
+        WRITEFN = Some(trampoline);
+        critical_section::release(token);
+    }
 }
 
 #[global_logger]
-pub struct GlobalSerialLogger;
+struct GlobalSerialLogger;
 
 unsafe impl defmt::Logger for GlobalSerialLogger {
     fn acquire() {
@@ -124,7 +112,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     unsafe fn flush() {}
 }
 
-/// Write to serial using proxy function. Caller must ensure this function is not called
+/// Write to serial using proxy function. We must ensure this function is not called
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {

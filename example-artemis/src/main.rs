@@ -19,7 +19,7 @@ fn main() -> ! {
 
     // set up serial
     let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-    defmt_serial::defmt_serial!(serial);
+    defmt_serial::defmt_serial(serial);
 
     defmt::warn!("Hello!");
 

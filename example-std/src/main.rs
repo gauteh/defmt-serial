@@ -23,7 +23,7 @@ fn main() {
 
     {
         let serial = StdoutSerial;
-        defmt_serial::defmt_serial!(serial);
+        defmt_serial::defmt_serial(serial);
     }
 
     eprintln!("Logging to info with defmt..");
