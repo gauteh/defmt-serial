@@ -65,7 +65,9 @@ where
 }
 
 /// Assign a serial peripheral to received defmt-messages.
-pub fn defmt_serial(mut serial: impl embedded_hal::serial::Write<u8> + 'static) {
+pub fn defmt_serial(serial: impl embedded_hal::serial::Write<u8> + 'static) {
+    let mut serial = core::mem::ManuallyDrop::new(serial);
+
     let wfn = move |buf: &[u8]| {
         for b in buf {
             nb::block!(serial.write(*b)).ok();

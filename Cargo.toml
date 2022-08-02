@@ -1,6 +1,6 @@
 [package]
 name = "defmt-serial"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = [ "Gaute Hope <eg@gaute.vetsj.com>" ]
 description = "Log defmt-messages over serial"
