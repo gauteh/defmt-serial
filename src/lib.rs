@@ -44,12 +44,18 @@ static TAKEN: AtomicBool = AtomicBool::new(false);
 static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
-type WriteCB = unsafe fn(&[u8]);
+type WriteCB = unsafe fn(SFn);
 static mut WRITEFN: Option<WriteCB> = None;
 
-unsafe fn trampoline<F>(buf: &[u8])
+
+enum SFn<'a> {
+    Buf(&'a [u8]),
+    Flush,
+}
+
+unsafe fn trampoline<F>(buf: SFn)
 where
-    F: FnMut(&[u8]),
+    F: FnMut(SFn),
 {
     if let Some(wfn) = WRITEFN {
         let wfn = &mut *(wfn as *mut F);
@@ -59,7 +65,7 @@ where
 
 fn get_trampoline<F>(_closure: &F) -> WriteCB
 where
-    F: FnMut(&[u8]),
+    F: FnMut(SFn),
 {
     trampoline::<F>
 }
@@ -68,10 +74,15 @@ where
 pub fn defmt_serial(serial: impl embedded_hal::serial::Write<u8> + 'static) {
     let mut serial = core::mem::ManuallyDrop::new(serial);
 
-    let wfn = move |buf: &[u8]| {
-        for b in buf {
-            nb::block!(serial.write(*b)).ok();
-        }
+    let wfn = move |a: SFn| {
+        match a {
+            SFn::Buf(buf) => {
+                for b in buf {
+                    nb::block!(serial.write(*b)).ok();
+                }
+            },
+            SFn::Flush => { serial.flush().ok(); },
+        };
     };
 
     let trampoline = get_trampoline(&wfn);
@@ -111,7 +122,11 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
         ENCODER.write(bytes, write_serial);
     }
 
-    unsafe fn flush() {}
+    unsafe fn flush() {
+        if let Some(wfn) = WRITEFN {
+            wfn(SFn::Flush);
+        }
+    }
 }
 
 /// Write to serial using proxy function. We must ensure this function is not called
@@ -119,7 +134,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 fn write_serial(remaining: &[u8]) {
     unsafe {
         if let Some(wfn) = WRITEFN {
-            wfn(remaining);
+            wfn(SFn::Buf(remaining));
         }
     }
 }
