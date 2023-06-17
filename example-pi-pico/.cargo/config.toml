@@ -1,0 +1,34 @@
+[build]
+# Set the default target to match the Cortex-M0+ in the RP2040
+target = "thumbv6m-none-eabi"
+
+# Target specific options
+[target.thumbv6m-none-eabi]
+# Pass some extra options to rustc, some of which get passed on to the linker.
+#
+# * linker argument --nmagic turns off page alignment of sections (which saves
+#   flash space)
+# * linker argument -Tlink.x tells the linker to use link.x as the linker
+#   script. This is usually provided by the cortex-m-rt crate, and by default
+#   the version in that crate will include a file called `memory.x` which
+#   describes the particular memory layout for your specific chip. 
+# * inline-threshold=5 makes the compiler more aggressive and inlining functions
+# * no-vectorize-loops turns off the loop vectorizer (seeing as the M0+ doesn't
+#   have SIMD)
+rustflags = [
+    "-C", "link-arg=--nmagic",
+    "-C", "link-arg=-Tlink.x",
+    "-C", "link-arg=-Tdefmt.x",
+    "-C", "inline-threshold=5",
+    "-C", "no-vectorize-loops",
+]
+# This runner will use openOCD to flash the pico directly from the raspbery pi and then
+# open serial0 for logging
+runner = "bash pico-pi4-openocd-defmt-wrapper.sh"
+
+# This runner will use uf2 to flash the pico and then open serial0 for logging. 
+# Don't forget to replug and hit the bootsel button! 
+#runner = "bash pico-elf2uf2-defmt-wrapper.sh"
+
+[env]
+DEFMT_LOG = "debug"
