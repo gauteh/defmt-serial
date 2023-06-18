@@ -1,2 +1,6 @@
-/target
-/Cargo.lock
+# Cargo resources and build artefacts
+**/target/
+**/Cargo.lock
+
+# IDE's
+.vscode/
