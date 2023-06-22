@@ -1,17 +1,17 @@
 # Pi Pico defmt example
 
 ## Introduction
-This example shows you how to setup a Pi Pico to output defmt messages over serial. This is useful if you are not using a probe and defmt-rtt. 
+This example shows you how to setup a Pi Pico to output defmt messages over serial. This is useful if you are not using a probe and defmt-rtt.
 
 ## Envrionment Setup
-This example relies on using `print-defmt` to decode the output sent over serial. This is a tool rather than a library so add it with
+This example relies on using `defmt-print` to decode the output sent over serial. This is a tool rather than a library so add it with
 ```
-cargo install print-defmt
+cargo install defmt-print
 ```
 
 Next, check that `pico-elf2uf2-defmt-wrapper.sh` and `pico-elf2uf2-defmt-wrapper.sh` are executable with `chmod +x`.
 
-Finally, ensure that you have permissions to open the serial port without sudo access! 
+Finally, ensure that you have permissions to open the serial port without sudo access!
 
 Often, you need to be part of the dialout group
 ```
@@ -23,7 +23,7 @@ The following diagram shows how connect a raspberry pi4 to the pico for UART ser
 
 <img alt="Image showing connections from pi to pico" src="pi2pico-serial.png" width="80%"></img>
 
-Source: [Getting Started With Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf) 
+Source: [Getting Started With Pico](https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf)
 
 ## Selecting a runner
 If you are not using elf binaries and openocd to flash the pico, open `.cargo/config.toml` and change the selected runner to `pico-elf2uf2-defmt-wrapper.sh`. Otherwise, you can leave the default as is.
