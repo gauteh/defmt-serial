@@ -13,6 +13,6 @@ defmt = "0.3.2"
 defmt-serial = { version = "*", path = "../" }
 
 [dependencies.ambiq-hal]
-version = "0.2"
+version = "0.3"
 features = [ "ambiq-sdk", "sparkfun-redboard-nano", "rt"]
 git = "https://github.com/gauteh/ambiq-rs"

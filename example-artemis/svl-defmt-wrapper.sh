@@ -5,7 +5,7 @@ set -ep
 TARGET=${1}
 BIN="${TARGET}.bin"
 
-BOOTLOADER="/home/gauteh/dev/ambiq-rs/tools/svl/svl.py"
+BOOTLOADER="/home/gauteh/dev/embedded/ambiq-rs/tools/svl/svl.py"
 
 echo "size:"
 arm-none-eabi-size "${TARGET}"
@@ -19,4 +19,4 @@ python3 "${BOOTLOADER}" -f "${BIN}" /dev/ttyUSB0 -v
 
 echo "Attaching defmt-print.."
 
-socat /dev/ttyUSB0,raw,echo=0 STDOUT | defmt-print -e $1
+socat /dev/ttyUSB0,b115200,raw,echo=0 STDOUT | defmt-print -e $1
