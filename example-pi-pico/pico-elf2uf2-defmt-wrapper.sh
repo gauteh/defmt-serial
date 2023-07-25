@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-echo "flashing with openocd"
+echo "flashing with elf2uf2-rs"
 elf2uf2-rs -d $1
 
 echo "Attaching defmt-print.."
