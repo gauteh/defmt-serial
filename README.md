@@ -1,5 +1,6 @@
 [![Crates.io](https://img.shields.io/crates/v/defmt-serial.svg)](https://crates.io/crates/defmt-serial)
 [![Documentation](https://docs.rs/defmt-serial/badge.svg)](https://docs.rs/defmt-serial/)
+[![tests](https://github.com/gauteh/defmt-serial/actions/workflows/rust.yml/badge.svg)](https://github.com/gauteh/defmt-serial/actions/workflows/rust.yml)
 
 # defmt-serial
 

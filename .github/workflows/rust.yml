@@ -22,9 +22,16 @@ jobs:
             toolchain: nightly
             override: true
 
-      - name: Add rust target for thumbv7em
+      - name: Install deps
+        run: |
+          apt-get -y update
+          apt-get -y install build-essential libssl-dev gcc-arm-none-eabi binutils-arm-none-eabi libclang-dev clang curl git
+
+      - name: Add rust target for thumbv6m, thumbv7em and musl
         run: |
           rustup target add thumbv7em-none-eabihf
+          rustup target add thumbv6m-none-eabi
+          rustup target add x86_64-unknown-linux-musl
 
       - name: Build
         run: cargo build --verbose
