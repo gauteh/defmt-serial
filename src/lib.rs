@@ -36,12 +36,12 @@
 //! }
 //! ```
 
-use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicBool, Ordering};
 use defmt::global_logger;
 
 static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
 static TAKEN: AtomicBool = AtomicBool::new(false);
-static INTERRUPTS: AtomicU8 = AtomicU8::new(0);
+static mut CS_RESTORE: critical_section::RestoreState = critical_section::RestoreState::invalid();
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
 type WriteCB = unsafe fn(SFn);
@@ -99,7 +99,7 @@ struct GlobalSerialLogger;
 
 unsafe impl defmt::Logger for GlobalSerialLogger {
     fn acquire() {
-        let token = unsafe { critical_section::acquire() };
+        let restore = unsafe { critical_section::acquire() };
 
         if TAKEN.load(Ordering::Relaxed) {
             panic!("defmt logger taken reentrantly");
@@ -107,7 +107,9 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 
         TAKEN.store(true, Ordering::Relaxed);
 
-        INTERRUPTS.store(token, Ordering::Relaxed);
+        unsafe {
+            CS_RESTORE = restore;
+        }
 
         unsafe { ENCODER.start_frame(write_serial) }
     }
@@ -115,7 +117,9 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     unsafe fn release() {
         ENCODER.end_frame(write_serial);
         TAKEN.store(false, Ordering::Relaxed);
-        critical_section::release(INTERRUPTS.load(Ordering::Relaxed));
+
+        let restore = CS_RESTORE;
+        critical_section::release(restore);
     }
 
     unsafe fn write(bytes: &[u8]) {
