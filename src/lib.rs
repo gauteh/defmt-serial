@@ -70,18 +70,20 @@ where
     trampoline::<F>
 }
 
-/// Assign a serial peripheral to received defmt-messages.
-pub fn defmt_serial(serial: impl embedded_hal::serial::Write<u8> + 'static) {
+/// Assign a serial peripheral to received defmt-messages using a blocking Write implementation.
+/// The blocking Write trait implementation is the default and should always be present. When
+/// the non blocking Write trait is implemented the blocking one is automatically provided.
+pub fn defmt_serial(serial: impl embedded_hal::blocking::serial::Write<u8> + 'static) {
     let mut serial = core::mem::ManuallyDrop::new(serial);
 
     let wfn = move |a: SFn| {
         match a {
             SFn::Buf(buf) => {
                 for b in buf {
-                    nb::block!(serial.write(*b)).ok();
+                    serial.bwrite_all(&b.to_ne_bytes()).ok();
                 }
             },
-            SFn::Flush => { serial.flush().ok(); },
+            SFn::Flush => { serial.bflush().ok(); },
         };
     };
 
