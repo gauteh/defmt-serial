@@ -31,6 +31,18 @@ jobs:
 
       - name: Build artemis example
         working-directory: example-artemis
-        run: cargo build --examples --verbose
+        run: cargo build --verbose
+
+      - name: Build pi-pico example
+        working-directory: example-pi-pico
+        run: cargo build --verbose
+
+      - name: Build std example
+        working-directory: example-std
+        run: cargo build --verbose
+
+      - name: Run std example
+        working-directory: example-std
+        run: cargo run --verbose
 
 
