@@ -20,6 +20,6 @@ panic-probe = { version = "0.3.0", features = [ "print-defmt" ] }
 cortex-m = "0.7.5"
 
 [dev-dependencies.ambiq-hal]
-version = "0.2"
+version = "0.3"
 features = [ "ambiq-sdk", "sparkfun-redboard-nano", "rt"]
 git = "https://github.com/gauteh/ambiq-rs"

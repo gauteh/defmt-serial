@@ -29,7 +29,8 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
-      - name: Build examples
+      - name: Build artemis example
+        working-directory: example-artemis
         run: cargo build --examples --verbose
 
 
