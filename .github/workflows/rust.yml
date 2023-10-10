@@ -24,8 +24,8 @@ jobs:
 
       - name: Install deps
         run: |
-          apt-get -y update
-          apt-get -y install build-essential libssl-dev gcc-arm-none-eabi binutils-arm-none-eabi libclang-dev clang curl git
+          sudo apt-get -y update
+          sudo apt-get -y install build-essential libssl-dev gcc-arm-none-eabi binutils-arm-none-eabi libclang-dev clang curl git
 
       - name: Add rust target for thumbv6m, thumbv7em and musl
         run: |
