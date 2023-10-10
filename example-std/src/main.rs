@@ -1,5 +1,5 @@
 #![feature(never_type)]
-use embedded_hal::serial::Write;
+use embedded_hal::blocking::serial::Write;
 use std::io::{self, Write as _};
 
 struct StdoutSerial;
@@ -7,12 +7,12 @@ struct StdoutSerial;
 impl Write<u8> for StdoutSerial {
     type Error = !;
 
-    fn write(&mut self, word: u8) -> nb::Result<(), !> {
-        io::stdout().write(&[word]).unwrap();
+    fn bwrite_all(&mut self, word: &[u8]) -> Result<(), !> {
+        io::stdout().write(word).unwrap();
         Ok(())
     }
 
-    fn flush(&mut self) -> nb::Result<(), !> {
+    fn bflush(&mut self) -> Result<(), !> {
         io::stdout().flush().unwrap();
         Ok(())
     }
