@@ -1,6 +1,6 @@
 #![no_std]
 //! A defmt target for logging messages over a serial interface. The serial interface must
-//! implement e.g. [`embedded_hal::serial::Write`].
+//! implement [`embedded_hal::blocking::serial::Write`].
 //!
 //! The received defmt-frames can be read using e.g. `socat` and `defmt-print`, so that you can set
 //! it up as `cargo run`ner. See the [example-artemis](https://github.com/gauteh/defmt-serial/tree/main/example-artemis) for how to do that.
@@ -47,7 +47,6 @@ static mut CS_RESTORE: critical_section::RestoreState = critical_section::Restor
 type WriteCB = unsafe fn(SFn);
 static mut WRITEFN: Option<WriteCB> = None;
 
-
 enum SFn<'a> {
     Buf(&'a [u8]),
     Flush,
@@ -70,9 +69,19 @@ where
     trampoline::<F>
 }
 
-/// Assign a serial peripheral to received defmt-messages using a blocking Write implementation.
-/// The blocking Write trait implementation is the default and should always be present. When
-/// the non blocking Write trait is implemented the blocking one is automatically provided.
+/// Assign a serial peripheral to receive defmt-messages.
+///
+///
+/// ```no_run
+///     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+///     defmt_serial::defmt_serial(serial);
+///
+///     defmt::info!("Hello from defmt!");
+/// ```
+///
+/// The peripheral should implement the [`embedded_hal::blocking::serial::Write`] trait. If your HAL
+/// already has the non-blocking [`Write`](embedded_hal::serial::Write) implemented, it can opt-in
+/// to the [default implementation](embedded_hal::blocking::serial::write::Default).
 pub fn defmt_serial(serial: impl embedded_hal::blocking::serial::Write<u8> + 'static) {
     let mut serial = core::mem::ManuallyDrop::new(serial);
 
@@ -82,8 +91,10 @@ pub fn defmt_serial(serial: impl embedded_hal::blocking::serial::Write<u8> + 'st
                 for b in buf {
                     serial.bwrite_all(&b.to_ne_bytes()).ok();
                 }
-            },
-            SFn::Flush => { serial.bflush().ok(); },
+            }
+            SFn::Flush => {
+                serial.bflush().ok();
+            }
         };
     };
 
