@@ -62,7 +62,7 @@ where
     }
 }
 
-fn get_trampoline<F>(_closure: &F) -> WriteCB
+fn get_trampoline<F>(_closure: F) -> WriteCB
 where
     F: FnMut(SFn),
 {
@@ -98,7 +98,7 @@ pub fn defmt_serial(serial: impl embedded_hal::blocking::serial::Write<u8> + 'st
         };
     };
 
-    let trampoline = get_trampoline(&wfn);
+    let trampoline = get_trampoline(wfn);
 
     unsafe {
         let token = critical_section::acquire();
