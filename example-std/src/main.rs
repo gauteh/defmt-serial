@@ -18,12 +18,11 @@ impl Write<u8> for StdoutSerial {
     }
 }
 
-static mut SERIAL: StdoutSerial = StdoutSerial;
-
 fn main() {
     eprintln!("Hello, world!");
 
     unsafe {
+        static mut SERIAL: StdoutSerial = StdoutSerial;
         defmt_serial::defmt_serial(&mut SERIAL);
     }
 

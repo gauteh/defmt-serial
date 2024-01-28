@@ -45,30 +45,23 @@ static mut CS_RESTORE: critical_section::RestoreState = critical_section::Restor
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
 trait EraseWrite {
-    fn write(&mut self, buf: SFn);
+    fn write(&mut self, buf: &[u8]);
+    fn flush(&mut self);
 }
 
 impl<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> EraseWrite for T {
-    fn write(&mut self, buf: SFn) {
-        match buf {
-            SFn::Buf(buf) => {
-                for b in buf {
-                    self.bwrite_all(&b.to_ne_bytes()).ok();
-                }
-            }
-            SFn::Flush => {
-                self.bflush().ok();
-            }
+    fn write(&mut self, buf: &[u8]) {
+        for b in buf {
+            self.bwrite_all(&b.to_ne_bytes()).ok();
         }
+    }
+
+    fn flush(&mut self) {
+        self.bflush().ok();
     }
 }
 
 static mut ERASEDWRITE: Option<&mut dyn EraseWrite> = None;
-
-enum SFn<'a> {
-    Buf(&'a [u8]),
-    Flush,
-}
 
 /// Assign a serial peripheral to receive defmt-messages.
 ///
@@ -127,7 +120,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 
     unsafe fn flush() {
         if let Some(writer) = &mut ERASEDWRITE {
-            writer.write(SFn::Flush);
+            writer.flush();
         }
     }
 }
@@ -137,7 +130,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 fn write_serial(remaining: &[u8]) {
     unsafe {
         if let Some(writer) = &mut ERASEDWRITE {
-            writer.write(SFn::Buf(remaining));
+            writer.write(remaining);
         }
     }
 }
