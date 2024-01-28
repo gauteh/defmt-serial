@@ -44,29 +44,30 @@ static TAKEN: AtomicBool = AtomicBool::new(false);
 static mut CS_RESTORE: critical_section::RestoreState = critical_section::RestoreState::invalid();
 
 /// All of this nonsense is to try and erase the Error type of the `embedded_hal::serial::nb::Write` implementor.
-type WriteCB = unsafe fn(SFn);
-static mut WRITEFN: Option<WriteCB> = None;
+trait EraseWrite {
+    fn write(&mut self, buf: SFn);
+}
+
+impl<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> EraseWrite for T {
+    fn write(&mut self, buf: SFn) {
+        match buf {
+            SFn::Buf(buf) => {
+                for b in buf {
+                    self.bwrite_all(&b.to_ne_bytes()).ok();
+                }
+            }
+            SFn::Flush => {
+                self.bflush().ok();
+            }
+        }
+    }
+}
+
+static mut ERASEDWRITE: Option<&mut dyn EraseWrite> = None;
 
 enum SFn<'a> {
     Buf(&'a [u8]),
     Flush,
-}
-
-unsafe fn trampoline<F>(buf: SFn)
-where
-    F: FnMut(SFn),
-{
-    if let Some(wfn) = WRITEFN {
-        let wfn = &mut *(wfn as *mut F);
-        wfn(buf);
-    }
-}
-
-fn get_trampoline<F>(_closure: F) -> WriteCB
-where
-    F: FnMut(SFn),
-{
-    trampoline::<F>
 }
 
 /// Assign a serial peripheral to receive defmt-messages.
@@ -82,27 +83,12 @@ where
 /// The peripheral should implement the [`embedded_hal::blocking::serial::Write`] trait. If your HAL
 /// already has the non-blocking [`Write`](embedded_hal::serial::Write) implemented, it can opt-in
 /// to the [default implementation](embedded_hal::blocking::serial::write::Default).
-pub fn defmt_serial(serial: impl embedded_hal::blocking::serial::Write<u8> + 'static) {
-    let mut serial = core::mem::ManuallyDrop::new(serial);
-
-    let wfn = move |a: SFn| {
-        match a {
-            SFn::Buf(buf) => {
-                for b in buf {
-                    serial.bwrite_all(&b.to_ne_bytes()).ok();
-                }
-            }
-            SFn::Flush => {
-                serial.bflush().ok();
-            }
-        };
-    };
-
-    let trampoline = get_trampoline(wfn);
-
+pub fn defmt_serial<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E>(
+    serial: &'static mut T,
+) {
     unsafe {
         let token = critical_section::acquire();
-        WRITEFN = Some(trampoline);
+        ERASEDWRITE = Some(serial);
         critical_section::release(token);
     }
 }
@@ -140,8 +126,8 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     }
 
     unsafe fn flush() {
-        if let Some(wfn) = WRITEFN {
-            wfn(SFn::Flush);
+        if let Some(writer) = &mut ERASEDWRITE {
+            writer.write(SFn::Flush);
         }
     }
 }
@@ -150,8 +136,8 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {
-        if let Some(wfn) = WRITEFN {
-            wfn(SFn::Buf(remaining));
+        if let Some(writer) = &mut ERASEDWRITE {
+            writer.write(SFn::Buf(remaining));
         }
     }
 }
