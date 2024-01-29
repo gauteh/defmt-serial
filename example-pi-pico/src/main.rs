@@ -21,6 +21,8 @@ use bsp::hal::{
     watchdog::Watchdog,
 };
 
+static SERIAL: StaticCell<bsp::hal::uart::UartPeripheral<_, _, _>> = StaticCell::new();
+
 #[entry]
 fn main() -> ! {
 
@@ -51,11 +53,11 @@ fn main() -> ! {
         sio.gpio_bank0,
         &mut pac.RESETS,
     );
-    
+
     // Need to perform clock init before using UART or it will freeze.
     let uart = bsp::hal::uart::UartPeripheral::new(
-        pac.UART0, (pins.gpio0.into_mode(), 
-        pins.gpio1.into_mode()), 
+        pac.UART0, (pins.gpio0.into_mode(),
+        pins.gpio1.into_mode()),
         &mut pac.RESETS)
         .enable(
             bsp::hal::uart::UartConfig::default(),
@@ -63,7 +65,7 @@ fn main() -> ! {
         )
         .unwrap();
 
-    defmt_serial::defmt_serial(uart);
+    defmt_serial::defmt_serial(SERIAL.init(uart));
     defmt::warn!("Hello!");
 
     loop {
