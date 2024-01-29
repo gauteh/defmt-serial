@@ -16,8 +16,12 @@
 //! use cortex_m::asm;
 //! use cortex_m_rt::entry;
 //! use ambiq_hal::{self as hal, prelude::*};
+//!
+//! use static_cell::StaticCell;
 //! use defmt;
 //! use defmt_serial as _;
+//!
+//! static SERIAL: StaticCell<hal::uart::Uart0> = StaticCell::new();
 //!
 //! #[entry]
 //! fn main() -> ! {
@@ -25,8 +29,8 @@
 //!     let pins = hal::gpio::Pins::new(dp.GPIO);
 //!
 //!     // set up serial
-//!     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-//!     defmt_serial::defmt_serial(serial);
+//!     let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+//!     defmt_serial::defmt_serial(SERIAL.init(serial));
 //!
 //!     defmt::info!("Hello from defmt!");
 //!
@@ -67,8 +71,9 @@ static mut ERASEDWRITE: Option<&mut dyn EraseWrite> = None;
 ///
 ///
 /// ```no_run
-///     let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-///     defmt_serial::defmt_serial(serial);
+///     static SERIAL: StaticCell<hal::uart::Uart0> = StaticCell::new();
+///     let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+///     defmt_serial::defmt_serial(SERIAL.init(serial));
 ///
 ///     defmt::info!("Hello from defmt!");
 /// ```

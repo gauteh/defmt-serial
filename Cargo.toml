@@ -18,6 +18,7 @@ nb = "1.1"
 cortex-m-rt = "0.7"
 panic-probe = { version = "0.3", features = [ "print-defmt" ] }
 cortex-m = "0.7"
+static_cell = "2.0.0"
 
 [dev-dependencies.ambiq-hal]
 version = "0.3"

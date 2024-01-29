@@ -11,14 +11,16 @@ can also try it out in a hosted environment: [example-std](example-std). To
 parse the logs have a look at [parsing logs](#Parsing-logs).
 
 ```rust
+static SERIAL: StaticCell<hal::uart::Uart0> = StaticCell::new();
+
 #[entry]
 fn main() -> ! {
     let mut dp = hal::pac::Peripherals::take().unwrap();
     let pins = hal::gpio::Pins::new(dp.GPIO);
 
     // set up serial
-    let mut serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-    defmt_serial::defmt_serial(serial);
+    let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
+    defmt_serial::defmt_serial(SERIAL.init(serial));
 
     defmt::info!("Hello from defmt!");
 
@@ -39,8 +41,8 @@ $ DEFMT_LOG=debug cargo run
 
 ## Parsing logs
 
-The easiest way to parse the logs is to use `socat` and `defmt-print` together. 
-For example: 
+The easiest way to parse the logs is to use `socat` and `defmt-print` together.
+For example:
 ```
 socat ${PORT},rawer,b${BAUDRATE},crnl STDOUT | defmt-print -e ${ELF}
 ```

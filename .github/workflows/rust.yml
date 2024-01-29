@@ -38,6 +38,9 @@ jobs:
       - name: Build
         run: cargo build --verbose
 
+      - name: Doc tests
+        run: cargo test --doc --target thumbv7em-none-eabihf
+
       - name: Build artemis example
         working-directory: example-artemis
         run: cargo build --verbose
