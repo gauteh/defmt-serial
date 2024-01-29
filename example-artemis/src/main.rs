@@ -6,6 +6,9 @@ use cortex_m_rt::entry;
 use ambiq_hal::{self as hal, prelude::*};
 use defmt;
 use defmt_serial as _;
+use static_cell::StaticCell;
+
+static SERIAL: StaticCell<hal::uart::Uart0> = StaticCell::new();
 
 #[entry]
 fn main() -> ! {
@@ -19,7 +22,7 @@ fn main() -> ! {
 
     // set up serial
     let serial = hal::uart::Uart0::new(dp.UART0, pins.tx0, pins.rx0);
-    defmt_serial::defmt_serial(serial);
+    defmt_serial::defmt_serial(SERIAL.init(serial));
 
     defmt::warn!("Hello!");
 
