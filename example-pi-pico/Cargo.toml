@@ -12,4 +12,3 @@ panic-probe = { version = "0.3", features = ["print-defmt"] }
 rp-pico = "0.7"
 defmt-serial = "0.6.0"
 panic-halt = "0.2.0"
-static_cell = "2.0.0"

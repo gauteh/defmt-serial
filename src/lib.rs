@@ -65,7 +65,62 @@ impl<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> EraseWrite for 
     }
 }
 
-static mut ERASEDWRITE: Option<&mut dyn EraseWrite> = None;
+// A mutable reference to the serial is kept in `DefmtSerialHandle` so that it cannot be used at
+// the same time as defmt is using it (and thus preventing it from messing up the defmt stream).
+//
+// defmt also needs a globally accessible reference, so the serial is aliased into this pointer.
+static mut ERASEDWRITE: Option<*mut dyn EraseWrite> = None;
+
+#[must_use = "You must hold on to this handle, otherwise the serial port will be de-registered, e.g.: `let _ds = defmt_serial(...)`"]
+pub struct DefmtSerialHandle<'serial, T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> {
+    #[allow(unused)]
+    serial: &'serial mut T, // aliased to ERASEDWRITE for defmt.
+}
+
+impl<'serial, T: embedded_hal::blocking::serial::Write<u8, Error = E>, E>
+    DefmtSerialHandle<'serial, T, E>
+{
+    fn new(serial: &'serial mut T) -> DefmtSerialHandle<'serial, T, E> {
+        critical_section::with(|_cs| {
+            unsafe {
+                let serial = serial as &mut dyn EraseWrite;
+
+                // Safety:
+                //
+                // err..: the pointer in ERASEDWRITE is cleared on DefmtSerialHandle drop.
+                // DefmtSerialHandle has the same liftetime as `serial` and holds the reference.
+                //
+                // so the reference is cleaned up by drop, and the global static is cleared at the
+                // same time. it is never accessed by the DefmtSerialHandle. and ERASEDWRITE is
+                // only accessed protected by a critical-section.
+                ERASEDWRITE = Some(core::mem::transmute(serial as *mut _));
+            }
+        });
+
+        DefmtSerialHandle { serial }
+    }
+
+    /// Borrow the serial. This is unsafe because the serial port is used by defmt, and you may
+    /// mess up the defmt stream. Secondly, the serial port may be accessed concurrently by defmt
+    /// if you have multiple threads so make sure to guard against that using a critical section or
+    /// similar.
+    ///
+    /// It is better to drop the `DefmtSerialHandle` and re-construct it afterwards.
+    pub unsafe fn serial(&mut self) -> &mut T {
+        self.serial
+    }
+}
+
+impl<'serial, T, E> Drop for DefmtSerialHandle<'serial, T, E>
+where
+    T: embedded_hal::blocking::serial::Write<u8, Error = E>,
+{
+    fn drop(&mut self) {
+        critical_section::with(|_cs| unsafe {
+            ERASEDWRITE = None;
+        });
+    }
+}
 
 /// Assign a serial peripheral to receive defmt-messages.
 ///
@@ -81,14 +136,10 @@ static mut ERASEDWRITE: Option<&mut dyn EraseWrite> = None;
 /// The peripheral should implement the [`embedded_hal::blocking::serial::Write`] trait. If your HAL
 /// already has the non-blocking [`Write`](embedded_hal::serial::Write) implemented, it can opt-in
 /// to the [default implementation](embedded_hal::blocking::serial::write::Default).
-pub fn defmt_serial<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E>(
-    serial: &'static mut T,
-) {
-    unsafe {
-        let token = critical_section::acquire();
-        ERASEDWRITE = Some(serial);
-        critical_section::release(token);
-    }
+pub fn defmt_serial<'serial, T: embedded_hal::blocking::serial::Write<u8, Error = E>, E>(
+    serial: &'serial mut T,
+) -> DefmtSerialHandle<T, E> {
+    DefmtSerialHandle::new(serial)
 }
 
 #[global_logger]
@@ -124,7 +175,8 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     }
 
     unsafe fn flush() {
-        if let Some(writer) = &mut ERASEDWRITE {
+        if let Some(writer) = ERASEDWRITE {
+            let writer = &mut *writer;
             writer.flush();
         }
     }
@@ -134,7 +186,8 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {
-        if let Some(writer) = &mut ERASEDWRITE {
+        if let Some(writer) = ERASEDWRITE {
+            let writer = &mut *writer;
             writer.write(remaining);
         }
     }

@@ -1,7 +1,6 @@
 #![feature(never_type)]
 use embedded_hal::blocking::serial::Write;
 use std::io::{self, Write as _};
-use static_cell::StaticCell;
 
 struct StdoutSerial;
 
@@ -19,12 +18,11 @@ impl Write<u8> for StdoutSerial {
     }
 }
 
-static SERIAL: StaticCell<StdoutSerial> = StaticCell::new();
-
 fn main() {
     eprintln!("Hello, world!");
 
-    defmt_serial::defmt_serial(SERIAL.init(StdoutSerial));
+    let mut serial = StdoutSerial;
+    let _ds = defmt_serial::defmt_serial(&mut serial);
 
     eprintln!("Logging to info with defmt..");
     defmt::info!("Hello defmt-world!");

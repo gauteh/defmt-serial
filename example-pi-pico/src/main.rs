@@ -4,7 +4,7 @@
 #![no_std]
 #![no_main]
 
-use bsp::{entry};
+use bsp::entry;
 use defmt;
 use defmt_serial as _;
 use panic_probe as _;
@@ -21,11 +21,8 @@ use bsp::hal::{
     watchdog::Watchdog,
 };
 
-static SERIAL: StaticCell<bsp::hal::uart::UartPeripheral<_, _, _>> = StaticCell::new();
-
 #[entry]
 fn main() -> ! {
-
     let mut pac = pac::Peripherals::take().unwrap();
     let core = pac::CorePeripherals::take().unwrap();
     let mut watchdog = Watchdog::new(pac.WATCHDOG);
@@ -56,16 +53,17 @@ fn main() -> ! {
 
     // Need to perform clock init before using UART or it will freeze.
     let uart = bsp::hal::uart::UartPeripheral::new(
-        pac.UART0, (pins.gpio0.into_mode(),
-        pins.gpio1.into_mode()),
-        &mut pac.RESETS)
-        .enable(
-            bsp::hal::uart::UartConfig::default(),
-            clocks.peripheral_clock.freq(),
-        )
-        .unwrap();
+        pac.UART0,
+        (pins.gpio0.into_mode(), pins.gpio1.into_mode()),
+        &mut pac.RESETS,
+    )
+    .enable(
+        bsp::hal::uart::UartConfig::default(),
+        clocks.peripheral_clock.freq(),
+    )
+    .unwrap();
 
-    defmt_serial::defmt_serial(SERIAL.init(uart));
+    let _df = defmt_serial::defmt_serial(uart);
     defmt::warn!("Hello!");
 
     loop {
