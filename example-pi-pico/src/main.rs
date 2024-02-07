@@ -8,6 +8,7 @@ use bsp::entry;
 use defmt;
 use defmt_serial as _;
 use panic_probe as _;
+use static_cell::StaticCell;
 
 // Provide an alias for our BSP so we can switch targets quickly.
 // Uncomment the BSP you included in Cargo.toml, the rest of the code does not need to change.
@@ -63,7 +64,24 @@ fn main() -> ! {
     )
     .unwrap();
 
-    let _df = defmt_serial::defmt_serial(uart);
+    static SERIAL: StaticCell<
+        bsp::hal::uart::UartPeripheral<
+            bsp::hal::uart::Enabled,
+            pac::UART0,
+            (
+                bsp::hal::gpio::Pin<
+                    bsp::hal::gpio::bank0::Gpio0,
+                    bsp::hal::gpio::Function<bsp::hal::gpio::Uart>,
+                >,
+                bsp::hal::gpio::Pin<
+                    bsp::hal::gpio::bank0::Gpio1,
+                    bsp::hal::gpio::Function<bsp::hal::gpio::Uart>,
+                >,
+            ),
+        >,
+    > = StaticCell::new();
+
+    defmt_serial::defmt_serial(SERIAL.init(uart));
     defmt::warn!("Hello!");
 
     loop {
