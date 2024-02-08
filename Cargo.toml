@@ -12,7 +12,6 @@ repository = "https://github.com/gauteh/defmt-serial"
 critical-section = "1.1"
 defmt = "0.3"
 embedded-hal = "0.2.7"
-nb = "1.1"
 
 [dev-dependencies]
 cortex-m-rt = "0.7"
