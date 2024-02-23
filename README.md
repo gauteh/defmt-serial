@@ -44,12 +44,19 @@ $ DEFMT_LOG=debug cargo run
 The easiest way to parse the logs is to use `socat` and `defmt-print` together.
 For example:
 ```
-socat ${PORT},rawer,b${BAUDRATE},crnl STDOUT | defmt-print -e ${ELF}
+$ socat ${PORT},rawer,b${BAUDRATE} STDOUT | defmt-print -e ${ELF}
 ```
 Just replace `${PORT}`, `${BAUDRATE}` and `${ELF}` with correct values.
 
 To install the tools on Ubuntu 22.04 run these commands:
 ```
-apt install socat
-cargo install defmt-print
+$ apt install socat
+$ cargo install defmt-print
+```
+
+Note that on Mac OS it seems that `socat` is broken for this purpose. Use `stty`
+and `cat` in stead:
+
+```
+$ (stty speed 115200 >/dev/null && cat) </dev/cu.usbserial-10 | defmt-print -e $(ELF)
 ```
