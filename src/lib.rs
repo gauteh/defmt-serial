@@ -41,6 +41,7 @@
 //! ```
 
 use core::sync::atomic::{AtomicBool, Ordering};
+use embedded_io::Write;
 use defmt::global_logger;
 
 static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
@@ -53,15 +54,13 @@ pub trait EraseWrite {
     fn flush(&mut self);
 }
 
-impl<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> EraseWrite for T {
+impl<T: Write> EraseWrite for T {
     fn write(&mut self, buf: &[u8]) {
-        for b in buf {
-            self.bwrite_all(&b.to_ne_bytes()).ok();
-        }
+        self.write_all(buf).ok();
     }
 
     fn flush(&mut self) {
-        self.bflush().ok();
+        self.flush().ok();
     }
 }
 
