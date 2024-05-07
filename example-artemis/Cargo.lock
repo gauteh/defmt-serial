@@ -14,7 +14,7 @@ dependencies = [
 [[package]]
 name = "ambiq-apollo3-pac2"
 version = "0.2.0"
-source = "git+https://github.com/gauteh/ambiq-rs#f483cbb1e2fa6f199b85f0e987fa623a31836030"
+source = "git+https://github.com/gauteh/ambiq-rs#35fe095258556ef7cf014cde39d8bd93dfd32e90"
 dependencies = [
  "bare-metal",
  "cortex-m",
@@ -24,8 +24,8 @@ dependencies = [
 
 [[package]]
 name = "ambiq-hal"
-version = "0.3.1"
-source = "git+https://github.com/gauteh/ambiq-rs#f483cbb1e2fa6f199b85f0e987fa623a31836030"
+version = "0.3.3"
+source = "git+https://github.com/gauteh/ambiq-rs#35fe095258556ef7cf014cde39d8bd93dfd32e90"
 dependencies = [
  "ambiq-apollo3-pac2",
  "ambiq-hal-sys",
@@ -44,7 +44,7 @@ dependencies = [
 [[package]]
 name = "ambiq-hal-sys"
 version = "0.1.0"
-source = "git+https://github.com/gauteh/ambiq-rs#f483cbb1e2fa6f199b85f0e987fa623a31836030"
+source = "git+https://github.com/gauteh/ambiq-rs#35fe095258556ef7cf014cde39d8bd93dfd32e90"
 dependencies = [
  "bindgen",
  "cc",
@@ -260,12 +260,11 @@ dependencies = [
 
 [[package]]
 name = "defmt-serial"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "critical-section",
  "defmt",
  "embedded-hal",
- "nb 1.1.0",
 ]
 
 [[package]]

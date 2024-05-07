@@ -14,6 +14,6 @@ defmt-serial = { version = "*", path = "../" }
 static_cell = "2.0.0"
 
 [dependencies.ambiq-hal]
-version = "0.3"
+version = "0.3.3"
 features = [ "ambiq-sdk", "sparkfun-redboard-nano", "rt"]
 git = "https://github.com/gauteh/ambiq-rs"
