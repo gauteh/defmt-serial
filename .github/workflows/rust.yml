@@ -41,9 +41,10 @@ jobs:
       - name: Doc tests
         run: cargo test --doc --target thumbv7em-none-eabihf
 
-      - name: Build artemis example
-        working-directory: example-artemis
-        run: cargo build --verbose
+      # Disabled until ambiq-hal supports eh-1
+      # - name: Build artemis example
+      #   working-directory: example-artemis
+      #   run: cargo build --verbose
 
       - name: Build pi-pico example
         working-directory: example-pi-pico
