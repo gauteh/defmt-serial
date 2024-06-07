@@ -6,10 +6,10 @@ edition = "2021"
 [dependencies]
 cortex-m = { version = "0.7.6"}
 cortex-m-rt = "0.7"
-embedded-hal = { version = "0.2.5", features = ["unproven"] }
+embedded-hal = { version = "1" }
 defmt = "0.3"
 panic-probe = { version = "0.3", features = ["print-defmt"] }
-rp-pico = "0.7"
+rp-pico = "0.9"
 defmt-serial = { version = "*", path = "../" }
 panic-halt = "0.2.0"
 static_cell = "2.0.0"
