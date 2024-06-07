@@ -1,19 +1,22 @@
 #![feature(never_type)]
-use embedded_hal::blocking::serial::Write;
+use core::convert::Infallible;
+use embedded_io::{Write, ErrorType};
 use static_cell::StaticCell;
 use std::io::{self, Write as _};
 
 struct StdoutSerial;
 
-impl Write<u8> for StdoutSerial {
-    type Error = !;
+impl ErrorType for StdoutSerial {
+    type Error = Infallible;
+}
 
-    fn bwrite_all(&mut self, word: &[u8]) -> Result<(), !> {
+impl Write for StdoutSerial {
+    fn write(&mut self, word: &[u8]) -> Result<usize, Infallible> {
         io::stdout().write(word).unwrap();
-        Ok(())
+        Ok(word.len())
     }
 
-    fn bflush(&mut self) -> Result<(), !> {
+    fn flush(&mut self) -> Result<(), Infallible> {
         io::stdout().flush().unwrap();
         Ok(())
     }

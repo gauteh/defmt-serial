@@ -40,8 +40,10 @@
 //! }
 //! ```
 
+use core::ptr::addr_of_mut;
 use core::sync::atomic::{AtomicBool, Ordering};
 use defmt::global_logger;
+use embedded_io::Write;
 
 static mut ENCODER: defmt::Encoder = defmt::Encoder::new();
 static TAKEN: AtomicBool = AtomicBool::new(false);
@@ -53,15 +55,13 @@ pub trait EraseWrite {
     fn flush(&mut self);
 }
 
-impl<T: embedded_hal::blocking::serial::Write<u8, Error = E>, E> EraseWrite for T {
+impl<T: Write> EraseWrite for T {
     fn write(&mut self, buf: &[u8]) {
-        for b in buf {
-            self.bwrite_all(&b.to_ne_bytes()).ok();
-        }
+        self.write_all(buf).ok();
     }
 
     fn flush(&mut self) {
-        self.bflush().ok();
+        self.flush().ok();
     }
 }
 
@@ -142,7 +142,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
     }
 
     unsafe fn flush() {
-        if let Some(writer) = &mut ERASEDWRITE {
+        if let Some(writer) = &mut *addr_of_mut!(ERASEDWRITE) {
             (*writer).flush();
         }
     }
@@ -152,7 +152,7 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
 /// several times in parallel.
 fn write_serial(remaining: &[u8]) {
     unsafe {
-        if let Some(writer) = &mut ERASEDWRITE {
+        if let Some(writer) = &mut *addr_of_mut!(ERASEDWRITE) {
             (*writer).write(remaining);
         }
     }

@@ -1,6 +1,6 @@
 [package]
 name = "defmt-serial"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = [ "Gaute Hope <eg@gaute.vetsj.com>" ]
 description = "Log defmt-messages over serial"
@@ -11,13 +11,13 @@ repository = "https://github.com/gauteh/defmt-serial"
 [dependencies]
 critical-section = "1.1"
 defmt = "0.3"
-embedded-hal = "0.2.7"
+embedded-io = "0.6.1"
 
 [dev-dependencies]
 cortex-m-rt = "0.7"
 panic-probe = { version = "0.3", features = [ "print-defmt" ] }
 cortex-m = "0.7"
-static_cell = "2.0.0"
+static_cell = "2"
 
 [dev-dependencies.ambiq-hal]
 version = "0.3"
