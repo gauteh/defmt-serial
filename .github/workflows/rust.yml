@@ -22,15 +22,18 @@ jobs:
 
       - name: Install deps
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install build-essential libssl-dev gcc-arm-none-eabi binutils-arm-none-eabi libclang-dev clang curl git
-          cargo install defmt-print
+          apt-get -y update
+          apt-get -y install build-essential libssl-dev gcc-arm-none-eabi binutils-arm-none-eabi libclang-dev clang curl git
 
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly
             override: true
+
+      - name: Install rust deps
+        run: |
+          cargo install defmt-print
 
       - name: Add rust target for thumbv6m, thumbv7em and musl
         run: |
