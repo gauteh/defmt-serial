@@ -87,7 +87,7 @@ pub fn defmt_serial<T: EraseWrite>(serial: &'static mut T) {
     unsafe {
         critical_section::with(|_| {
             assert!(
-                ERASEDWRITE.is_none(),
+                (&raw mut ERASEDWRITE).as_ref().is_none(),
                 "Tried to assign serial port when one was already assigned."
             );
             ERASEDWRITE = Some(serial);
@@ -126,24 +126,26 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
             CS_RESTORE = restore;
         }
 
-        unsafe { ENCODER.start_frame(write_serial) }
+        unsafe { (&raw mut ENCODER).as_mut().unwrap().start_frame(write_serial) }
     }
 
     unsafe fn release() {
-        ENCODER.end_frame(write_serial);
+        unsafe { (&raw mut ENCODER).as_mut().unwrap().end_frame(write_serial); }
         TAKEN.store(false, Ordering::Relaxed);
 
-        let restore = CS_RESTORE;
-        critical_section::release(restore);
+        let restore = (&raw mut CS_RESTORE);
+        unsafe { critical_section::release(*restore); }
     }
 
     unsafe fn write(bytes: &[u8]) {
-        ENCODER.write(bytes, write_serial);
+        unsafe { (&raw mut ENCODER).as_mut().unwrap().write(bytes, write_serial); }
     }
 
     unsafe fn flush() {
-        if let Some(writer) = &mut *addr_of_mut!(ERASEDWRITE) {
-            (*writer).flush();
+        unsafe {
+            if let Some(writer) = &mut *addr_of_mut!(ERASEDWRITE) {
+                (*writer).flush();
+            }
         }
     }
 }
