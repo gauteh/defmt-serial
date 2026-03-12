@@ -41,7 +41,8 @@
 //! ```
 
 use core::ptr::addr_of_mut;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::Ordering;
+use portable_atomic::AtomicBool;
 use defmt::global_logger;
 use embedded_io::Write;
 
