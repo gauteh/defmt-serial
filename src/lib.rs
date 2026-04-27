@@ -88,7 +88,7 @@ pub fn defmt_serial<T: EraseWrite>(serial: &'static mut T) {
     unsafe {
         critical_section::with(|_| {
             assert!(
-                (&raw mut ERASEDWRITE).as_ref().is_none(),
+                (&raw mut ERASEDWRITE).as_ref().unwrap().is_none(),
                 "Tried to assign serial port when one was already assigned."
             );
             ERASEDWRITE = Some(serial);
