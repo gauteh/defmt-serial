@@ -24,3 +24,7 @@ static_cell = "2"
 version = "0.3"
 features = [ "ambiq-sdk", "sparkfun-redboard-nano", "rt"]
 git = "https://github.com/gauteh/ambiq-rs"
+
+[features]
+# Include magic bytes to mix regular output with defmt when using espflash
+espflash = []
