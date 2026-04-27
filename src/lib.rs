@@ -127,6 +127,9 @@ unsafe impl defmt::Logger for GlobalSerialLogger {
             CS_RESTORE = restore;
         }
 
+        #[cfg(feature = "espflash")]
+        write_serial(&[0xFF, 0x00]);
+        
         unsafe { (&raw mut ENCODER).as_mut().unwrap().start_frame(write_serial) }
     }
 
