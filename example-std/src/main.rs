@@ -1,4 +1,3 @@
-#![feature(never_type)]
 use core::convert::Infallible;
 use embedded_io::{Write, ErrorType};
 use static_cell::StaticCell;

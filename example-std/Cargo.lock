@@ -48,11 +48,12 @@ dependencies = [
 
 [[package]]
 name = "defmt-serial"
-version = "0.10.0"
+version = "0.12.0"
 dependencies = [
  "critical-section",
  "defmt",
  "embedded-io",
+ "portable-atomic",
 ]
 
 [[package]]
@@ -81,9 +82,9 @@ checksum = "8d5439c4ad607c3c23abf66de8c8bf57ba8adcd1f129e699851a6e43935d339d"
 
 [[package]]
 name = "portable-atomic"
-version = "1.6.0"
+version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7170ef9988bc169ba16dd36a7fa041e5c4cbeb6a35b76d4c03daded371eae7c0"
+checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
 
 [[package]]
 name = "proc-macro-error"
